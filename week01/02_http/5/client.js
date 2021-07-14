@@ -75,6 +75,11 @@ class ResponseParser { //逐步接受response文本，并经行分析
         this.headerValue = "";
         this.bodyParser = null;
     }
+
+    get isFinished(){
+        return this.bodyParser && this.bodyParser.isFinished;
+    }
+
     receive(string) {
         for (let i = 0; i < string.length; i++) {
             this.receiveChar(string.charAt(i));
@@ -97,6 +102,8 @@ class ResponseParser { //逐步接受response文本，并经行分析
                 this.current = this.WAITING_HEADER_SPACE;
             } else if(char === '\r') {
                 this.current = this.WAITING_HEADER_BLOCK_END;
+                if(this.headers['Transfer-Encoding'] === 'chunked')
+                    this.bodyParser = new TrunkedBodyParser();
             } else {
                 this.headerName += char;
             }
@@ -122,7 +129,8 @@ class ResponseParser { //逐步接受response文本，并经行分析
                 this.current = this.WAITING_BODY;
             }
         } else if(this.current === this.WAITING_BODY) {
-            console.log(char)
+            this.bodyParser.receiveChar(char);
+            // console.log(char)
         }
     }
 }
